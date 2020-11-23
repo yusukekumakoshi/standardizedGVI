@@ -25,7 +25,7 @@ def addExternalPoints(boundary,idx,gdf_clip):
 
     #dummy points
     gdf_clip_ext = gdf_clip.copy()
-    dummy_pts = [Point(x_min,y_max+4*h),Point(x_max,y_min-4*h),Point(y_min,x_max+4*w),Point(y_max,x_min-4*w)]
+    dummy_pts = [Point(x_min,y_max+4*h),Point(x_max,y_min-4*h),Point(x_max+4*w,y_min),Point(x_min-4*w,y_max)]
     for pts_idx, gdf_idx in enumerate(range(len(gdf_clip_ext),len(gdf_clip_ext)+4,1)):
         gdf_clip_ext.loc[gdf_idx,'geometry'] = dummy_pts[pts_idx]
     
@@ -50,51 +50,53 @@ def calc_sGVI(gvi_point_gdf,boundary_gdf,link_gdf):
         
         gdf_proj = gvi_point_gdf.to_crs(boundary_gdf.crs)
 
-        gdf_clip = gpd.clip(gdf_proj,boundary) # TODO: check if overlays or not
-        gdf_clip.dropna(how='all',inplace=True)
-        gdf_clip.reset_index(drop=True,inplace=True) 
-        
-        boundary_gdf.loc[idx,'n_pt'] = len(gdf_clip) # original number of points
-        
-        gdf_clip_ext = addExternalPoints(boundary,idx,gdf_clip)
+        try:
+            gdf_clip = gpd.clip(gdf_proj,boundary) # TODO: check if overlays or not
+            gdf_clip.dropna(how='all',inplace=True)
+            gdf_clip.reset_index(drop=True,inplace=True)
 
-        # Voronoi
-        boundary_shape = cascaded_union(boundary.geometry)
-        coords = points_to_coords(gdf_clip_ext.geometry)
+            boundary_gdf.loc[idx,'n_pt'] = len(gdf_clip) # original number of points
 
-        poly_shapes, pts, poly_to_pt_assignments = voronoi_regions_from_coords(coords, boundary_shape,farpoints_max_extend_factor=20) # 10: error
+            gdf_clip_ext = addExternalPoints(boundary,idx,gdf_clip)
 
-        gdf_clip['length_sum'] = 0
+            # Voronoi
+            boundary_shape = cascaded_union(boundary.geometry)
+            coords = points_to_coords(gdf_clip_ext.geometry)
 
-        for i in range(len(poly_shapes)):
-            poly = poly_shapes[i]
-            pt_idx = poly_to_pt_assignments[i][0] #nested list
+            poly_shapes, pts, poly_to_pt_assignments = voronoi_regions_from_coords(coords, boundary_shape,farpoints_max_extend_factor=20) # 10: error
 
-            poly_gdf = gpd.GeoDataFrame(crs=gdf_clip.crs,geometry=[poly])
+            gdf_clip['length_sum'] = 0
 
-            cut_link = gpd.clip(link_gdf,poly_gdf)
-            cut_link.dropna(how='all',inplace=True)
+            for i in range(len(poly_shapes)):
+                poly = poly_shapes[i]
+                pt_idx = poly_to_pt_assignments[i][0] #nested list
 
-            if len(cut_link)<1:
-                continue
+                poly_gdf = gpd.GeoDataFrame(crs=gdf_clip.crs,geometry=[poly])
 
-            # add up total length
-            total_l = 0
-            for j in cut_link.index:
-                total_l += cut_link.loc[j,'geometry'].length
+                cut_link = gpd.clip(link_gdf,poly_gdf)
+                cut_link.dropna(how='all',inplace=True)
 
-            # associate with GVI (work on gdf_clip)
-            gdf_clip.loc[pt_idx,'length_sum'] = total_l
+                if len(cut_link)<1:
+                    continue
 
-        total = gdf_clip['length_sum'].sum()
-        gdf_clip['length_ratio'] = [gdf_clip.loc[i,'length_sum']/total for i in gdf_clip.index]
+                # add up total length
+                total_l = 0
+                for j in cut_link.index:
+                    total_l += cut_link.loc[j,'geometry'].length
 
-        sGVI = np.dot(np.matrix(gdf_clip['greenView']),np.matrix(gdf_clip['length_ratio']).T)
+                # associate with GVI (work on gdf_clip)
+                gdf_clip.loc[pt_idx,'length_sum'] = total_l
 
-        boundary_gdf.loc[idx,'avgGVI'] = gdf_clip['greenView'].mean()
-        boundary_gdf.loc[idx,'medGVI'] = gdf_clip['greenView'].median()
-        boundary_gdf.loc[idx,'sGVI'] = sGVI[0,0]
-        
+            total = gdf_clip['length_sum'].sum()
+            gdf_clip['length_ratio'] = [gdf_clip.loc[i,'length_sum']/total for i in gdf_clip.index]
+
+            sGVI = np.dot(np.matrix(gdf_clip['greenView']),np.matrix(gdf_clip['length_ratio']).T)
+
+            boundary_gdf.loc[idx,'avgGVI'] = gdf_clip['greenView'].mean()
+            boundary_gdf.loc[idx,'medGVI'] = gdf_clip['greenView'].median()
+            boundary_gdf.loc[idx,'sGVI'] = sGVI[0,0]
+        except:
+            print("No point is contained in the boundary polygon ", idx)
     return boundary_gdf
 
 
@@ -108,8 +110,8 @@ if __name__ == "__main__":
     # boundary_gdf = gpd.read_file("../../../OneDrive/2020TreepediaJapan/Yokohama_shp/Midori_boundary.shp")
     # link_gdf = gpd.read_file("midori_road.shp")
     gvi_point_gdf = gpd.read_file("Nishi_GreenViewRes_32654.shp") # Shapefile of GVI point data
-    boundary_gdf = gpd.read_file("Nishi_road_32654.shp")
-    link_gdf = gpd.read_file("Nishi_test_32654.shp")
+    boundary_gdf = gpd.read_file("Nishi_test_32654.shp") # Shapefile of boundary polygon data
+    link_gdf = gpd.read_file("Nishi_road_32654.shp") # Shapefile of road linestring data
 
     print("Input data ready.")
 
