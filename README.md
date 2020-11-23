@@ -2,7 +2,13 @@
 Calculate standardized GVI from GVI point data / original road network data / boundary data. The process uses [geovoronoi](https://github.com/WZBSocialScienceCenter/geovoronoi) package in order to achieve less-biased estimation of GVI at zonal level.
 
 ## Prepare a virtual environment
-Due to dependency of rtree, install firstly `spatialindex` via homebrew.
+First, create a virtual environment and activate it.
+```terminal
+python3 -m venv ~/.sGVI
+source ~/.sGVI/bin/activate
+```
+
+Due to dependency of rtree, install `spatialindex` via homebrew.
 ```terminal 
 brew install spatialindex
 ```
