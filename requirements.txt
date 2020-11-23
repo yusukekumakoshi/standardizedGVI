@@ -1,0 +1,8 @@
+geopandas  == 0.7.0
+geovoronoi == 0.2.0
+matplotlib == 3.1.1
+numpy == 1.18.1
+pandas == 1.0.3
+rtree == 0.9.4
+shapely == 1.7.0
+tqdm == 4.45.0
