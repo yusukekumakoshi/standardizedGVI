@@ -103,7 +103,7 @@ def calc_sGVI(gvi_point_gdf,boundary_gdf,link_gdf):
 ## ----------------- Main function ------------------------
 if __name__ == "__main__":
 
-    os.chdir("../sGVI_test") #set this as the current directory
+    os.chdir("sGVI_test") #set this as the current directory
     root = os.getcwd()
 
     # gvi_point_gdf = gpd.read_file("midori_GreenViewRes.shp") # Shapefile of GVI point data
