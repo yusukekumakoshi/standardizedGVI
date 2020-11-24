@@ -90,11 +90,12 @@ def calc_sGVI(gvi_point_gdf,boundary_gdf,link_gdf):
             total = gdf_clip['length_sum'].sum()
             gdf_clip['length_ratio'] = [gdf_clip.loc[i,'length_sum']/total for i in gdf_clip.index]
 
-            sGVI = np.dot(np.matrix(gdf_clip['greenView']),np.matrix(gdf_clip['length_ratio']).T)
+            sgvi = np.dot(np.matrix(gdf_clip['greenView']),np.matrix(gdf_clip['length_ratio']).T)
+            print("sGVI of polygon ",idx,": ",sgvi[0,0])
 
             boundary_gdf.loc[idx,'avgGVI'] = gdf_clip['greenView'].mean()
             boundary_gdf.loc[idx,'medGVI'] = gdf_clip['greenView'].median()
-            boundary_gdf.loc[idx,'sGVI'] = sGVI[0,0]
+            boundary_gdf.loc[idx,'sGVI'] = sgvi[0,0]
         except:
             print("No point is contained in the boundary polygon ", idx)
     return boundary_gdf
@@ -103,15 +104,21 @@ def calc_sGVI(gvi_point_gdf,boundary_gdf,link_gdf):
 ## ----------------- Main function ------------------------
 if __name__ == "__main__":
 
-    os.chdir("sGVI_test") #set this as the current directory
+    crs_common = 'epsg:4326'
+    os.chdir("../sGVI_sample") #set this as the current directory
     root = os.getcwd()
 
-    # gvi_point_gdf = gpd.read_file("midori_GreenViewRes.shp") # Shapefile of GVI point data
-    # boundary_gdf = gpd.read_file("../../../OneDrive/2020TreepediaJapan/Yokohama_shp/Midori_boundary.shp")
-    # link_gdf = gpd.read_file("midori_road.shp")
-    gvi_point_gdf = gpd.read_file("Nishi_GreenViewRes_32654.shp") # Shapefile of GVI point data
-    boundary_gdf = gpd.read_file("Nishi_test_32654.shp") # Shapefile of boundary polygon data
-    link_gdf = gpd.read_file("Nishi_road_32654.shp") # Shapefile of road linestring data
+    # gvi_point_gdf = gpd.read_file("Nishi_GreenViewRes_32654.shp") # Shapefile of GVI point data
+    # boundary_gdf = gpd.read_file("Nishi_test_32654.shp") # Shapefile of boundary polygon data
+    # link_gdf = gpd.read_file("Nishi_road_32654.shp") # Shapefile of road linestring data
+    gvi_point_gdf = gpd.read_file("nishi_GreenViewRes.shp") # Shapefile of GVI point data
+    boundary_gdf = gpd.read_file("nishi_boundary.shp") # Shapefile of boundary polygon data
+    link_gdf = gpd.read_file("nishi_road.shp") # Shapefile of road linestring data
+    
+    # Use the same CRS
+    gvi_point_gdf = gvi_point_gdf.to_crs(crs_common)
+    boundary_gdf = boundary_gdf.to_crs(crs_common)
+    link_gdf = link_gdf.to_crs(crs_common)
 
     print("Input data ready.")
 
