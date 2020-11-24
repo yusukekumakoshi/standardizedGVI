@@ -31,11 +31,13 @@ Original road network data must be the same network as that you used to calculat
 
 Boundary data must be shapefile of polygons (any form is accepted).
 
-Set the paths to those files in `sGVI.py`, run the following:
+After setting the paths to those files in `sGVI.py`, run the following:
 
 ```terminal
 python3 code/sGVI.py
 ```
 
+### Notes
+* The parameter `crs_common` in `sGVI.py` is the CRS on which the process is done. Default is epsg:4326 (WGS84). 
 ## Reference
 Kumakoshi, Y., Chan, S. Y., Koizumi, H., Li, X., & Yoshimura, Y. (2020). Standardized Green View Index and Quantification of Different Metrics of Urban Green Vegetation. _Sustainability, 12_(18), 7434.
