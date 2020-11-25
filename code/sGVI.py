@@ -91,7 +91,7 @@ def calc_sGVI(gvi_point_gdf,boundary_gdf,link_gdf):
             gdf_clip['length_ratio'] = [gdf_clip.loc[i,'length_sum']/total for i in gdf_clip.index]
 
             sgvi = np.dot(np.matrix(gdf_clip['greenView']),np.matrix(gdf_clip['length_ratio']).T)
-            print("sGVI of polygon ",idx,": ",sgvi[0,0])
+            # print("sGVI of polygon ",idx,": ",sgvi[0,0])
 
             boundary_gdf.loc[idx,'avgGVI'] = gdf_clip['greenView'].mean()
             boundary_gdf.loc[idx,'medGVI'] = gdf_clip['greenView'].median()
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     gvi_point_gdf = gpd.read_file("nishi_GreenViewRes.shp") # Shapefile of GVI point data
     boundary_gdf = gpd.read_file("nishi_boundary.shp") # Shapefile of boundary polygon data
     link_gdf = gpd.read_file("nishi_road.shp") # Shapefile of road linestring data
-    
+
     # Use the same CRS
     gvi_point_gdf = gvi_point_gdf.to_crs(crs_common)
     boundary_gdf = boundary_gdf.to_crs(crs_common)
