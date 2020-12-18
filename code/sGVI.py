@@ -47,7 +47,7 @@ def calc_sGVI(gvi_point_gdf,boundary_gdf,link_gdf):
 
     for idx in tqdm(boundary_gdf.index):
         boundary = boundary_gdf.iloc[idx:idx+1] # .iloc[idx] returns GeoSeries, not accepted by gpd.clip
-        
+
         gdf_proj = gvi_point_gdf.to_crs(boundary_gdf.crs)
 
         try:
@@ -72,20 +72,23 @@ def calc_sGVI(gvi_point_gdf,boundary_gdf,link_gdf):
                 pt_idx = poly_to_pt_assignments[i][0] #nested list
 
                 poly_gdf = gpd.GeoDataFrame(crs=gdf_clip.crs,geometry=[poly])
+                try:
+                    # Clip may fail if poly_gdf does not overlay link_gdf
+                    cut_link = gpd.clip(link_gdf,poly_gdf)
+                    cut_link.dropna(how='all',inplace=True)
 
-                cut_link = gpd.clip(link_gdf,poly_gdf)
-                cut_link.dropna(how='all',inplace=True)
+                    if len(cut_link)<1:
+                        continue
 
-                if len(cut_link)<1:
+                    # add up total length
+                    total_l = 0
+                    for j in cut_link.index:
+                        total_l += cut_link.loc[j,'geometry'].length
+
+                    # associate with GVI (work on gdf_clip)
+                    gdf_clip.loc[pt_idx,'length_sum'] = total_l
+                except:
                     continue
-
-                # add up total length
-                total_l = 0
-                for j in cut_link.index:
-                    total_l += cut_link.loc[j,'geometry'].length
-
-                # associate with GVI (work on gdf_clip)
-                gdf_clip.loc[pt_idx,'length_sum'] = total_l
 
             total = gdf_clip['length_sum'].sum()
             gdf_clip['length_ratio'] = [gdf_clip.loc[i,'length_sum']/total for i in gdf_clip.index]
@@ -101,19 +104,31 @@ def calc_sGVI(gvi_point_gdf,boundary_gdf,link_gdf):
     return boundary_gdf
 
 
+def checkValidGeometry(pt_gdf):
+    for idx in pt_gdf.index:
+        pt = pt_gdf.loc[idx,'geometry']
+        if pt.geom_type == 'MultiPoint':
+            pt_gdf.loc[idx,'geometry'] = pt[0]
+        else:
+            continue
+    return pt_gdf
+
 ## ----------------- Main function ------------------------
 if __name__ == "__main__":
 
     crs_common = 'epsg:4326'
-    os.chdir("../sGVI_sample") #set this as the current directory
+    os.chdir("../debag") #set this as the current directory
     root = os.getcwd()
 
     # gvi_point_gdf = gpd.read_file("Nishi_GreenViewRes_32654.shp") # Shapefile of GVI point data
     # boundary_gdf = gpd.read_file("Nishi_test_32654.shp") # Shapefile of boundary polygon data
     # link_gdf = gpd.read_file("Nishi_road_32654.shp") # Shapefile of road linestring data
-    gvi_point_gdf = gpd.read_file("nishi_GreenViewRes.shp") # Shapefile of GVI point data
-    boundary_gdf = gpd.read_file("nishi_boundary.shp") # Shapefile of boundary polygon data
-    link_gdf = gpd.read_file("nishi_road.shp") # Shapefile of road linestring data
+    gvi_point_gdf = gpd.read_file("minami_mutsukawa2_GVI.shp") # Shapefile of GVI point data
+    boundary_gdf = gpd.read_file("minami_mutsukawa2_boudary.shp") # Shapefile of boundary polygon data
+    link_gdf = gpd.read_file("minami_mutsukawa2_road.shp") # Shapefile of road linestring data
+
+    # validity check
+    gvi_point_gdf = checkValidGeometry(gvi_point_gdf)
 
     # Use the same CRS
     gvi_point_gdf = gvi_point_gdf.to_crs(crs_common)
@@ -126,5 +141,5 @@ if __name__ == "__main__":
 
     print("Calculation finished. Writing the output file.")
 
-    sGVI_gdf.to_file("Nishi_sGVI.shp")
+    sGVI_gdf.to_file("mm_sGVI.shp")
     print("Done!")
